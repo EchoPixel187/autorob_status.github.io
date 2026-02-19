@@ -16,16 +16,21 @@
 </table>
 
 <script>
-const supabase = supabase.createClient(
-  "https://DEINPROJEKT.supabase.co",
-  "DEIN_PUBLIC_ANON_KEY"
+const supabaseClient = supabase.createClient(
+  "https://mpalntykgnflxqbswykw.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1wYWxudHlrZ25mbHhxYnN3eWt3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0Mzk4OTcsImV4cCI6MjA4NzAxNTg5N30.qw5jyCIdKB9q9Tjp12Oxhwo1DBX_NCISugf_ahB-9lw"
 )
 
 async function loadLogs() {
-  const { data } = await supabase
-    .from('logs')
+  const { data, error } = await supabaseClient
+    .from('EH_Admin_Stats')
     .select('*')
     .order('created_at', { ascending: false })
+
+  if (error) {
+    console.error("Supabase Error:", error)
+    return
+  }
 
   const table = document.getElementById("table")
 
@@ -37,6 +42,11 @@ async function loadLogs() {
     </tr>
   `
 
+  if (!data || data.length === 0) {
+    table.innerHTML += `<tr><td colspan="3">Keine Logs gefunden</td></tr>`
+    return
+  }
+
   data.forEach(row => {
     table.innerHTML += `
       <tr>
@@ -47,6 +57,11 @@ async function loadLogs() {
     `
   })
 }
+
+loadLogs()
+setInterval(loadLogs, 10000)
+</script>
+
 
 loadLogs()
 setInterval(loadLogs, 10000)
