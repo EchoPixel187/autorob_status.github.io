@@ -156,13 +156,22 @@ supabaseClient.auth.onAuthStateChange((event, session) => {
   else showLogin()
 })
 
+let activeLoadRequest = 0
+
 function showAdmin() {
-  document.getElementById("loginView").classList.add("hidden")
-  document.getElementById("adminView").classList.remove("hidden")
-  loadLogs()
+  const adminView = document.getElementById("adminView")
+  const loginView = document.getElementById("loginView")
+  const wasHidden = adminView.classList.contains("hidden")
+
+  loginView.classList.add("hidden")
+  adminView.classList.remove("hidden")
+
+  // Verhindert doppeltes Initial-Laden, wenn Session-Events mehrfach feuern.
+  if (wasHidden) loadLogs()
 }
 
 function showLogin() {
+  activeLoadRequest++
   document.getElementById("adminView").classList.add("hidden")
   document.getElementById("loginView").classList.remove("hidden")
 }
@@ -214,6 +223,7 @@ function getValue(row, keys) {
 }
 
 async function loadLogs() {
+  const requestId = ++activeLoadRequest
   const table = resetTable()
   document.getElementById("status").innerText = "Lade Logs..."
 
@@ -223,18 +233,23 @@ async function loadLogs() {
     .limit(500)
 
   if (error) {
+    if (requestId !== activeLoadRequest) return
     document.getElementById("status").innerText = error.message
     return
   }
 
   if (!data || data.length === 0) {
+    if (requestId !== activeLoadRequest) return
     document.getElementById("status").innerText = "Keine Logs gefunden"
     return
   }
 
   data.sort((a,b) => new Date(b.created_at) - new Date(a.created_at))
 
-  data.forEach(row => {
+  if (requestId !== activeLoadRequest) return
+
+  for (const row of data) {
+    if (requestId !== activeLoadRequest) return
     const serverId = getValue(row, ["server-id","server_id","serverId"])
     const tr = document.createElement("tr")
     tr.innerHTML = `
@@ -245,8 +260,9 @@ async function loadLogs() {
       <td><span class="badge">${serverId || "-"}</span></td>
     `
     table.appendChild(tr)
-  })
+  }
 
+  if (requestId !== activeLoadRequest) return
   document.getElementById("status").innerText = data.length + " Logs geladen"
 }
 
