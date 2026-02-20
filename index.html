@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="utf-8">
   <title>Script Logs</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -14,6 +15,7 @@
     <th>Time</th>
   </tr>
 </table>
+<p id="status"></p>
 
 <script>
 const supabaseClient = supabase.createClient(
@@ -21,41 +23,119 @@ const supabaseClient = supabase.createClient(
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1wYWxudHlrZ25mbHhxYnN3eWt3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0Mzk4OTcsImV4cCI6MjA4NzAxNTg5N30.qw5jyCIdKB9q9Tjp12Oxhwo1DBX_NCISugf_ahB-9lw"
 )
 
-async function loadLogs() {
-  const { data, error } = await supabaseClient
-    .from('EH_Admin_Stats')
-    .select('*')
-    .order('created_at', { ascending: false })
+const tableCandidates = ["EH_Admin_Stats", "eh_admin_stats"]
 
-  if (error) {
-    console.error("Supabase Error:", error)
-    return
+function setStatus(message, isError = false) {
+  const status = document.getElementById("status")
+  status.textContent = message
+  status.style.color = isError ? "crimson" : "black"
+}
+
+function resetTable() {
+  const table = document.getElementById("table")
+  table.innerHTML = ""
+
+  const headerRow = document.createElement("tr")
+  ;["User ID", "Username", "Time"].forEach(label => {
+    const th = document.createElement("th")
+    th.textContent = label
+    headerRow.appendChild(th)
+  })
+  table.appendChild(headerRow)
+
+  return table
+}
+
+function addInfoRow(table, text, isError = false) {
+  const row = document.createElement("tr")
+  const cell = document.createElement("td")
+  cell.colSpan = 3
+  cell.textContent = text
+  if (isError) {
+    cell.style.color = "crimson"
+  }
+  row.appendChild(cell)
+  table.appendChild(row)
+}
+
+function getValue(row, keys) {
+  for (const key of keys) {
+    if (row[key] !== undefined && row[key] !== null && row[key] !== "") {
+      return row[key]
+    }
+  }
+  return ""
+}
+
+async function loadLogs() {
+  const table = resetTable()
+  setStatus("Lade Logs...")
+
+  let lastError = null
+  let data = null
+  let usedTable = null
+
+  for (const tableName of tableCandidates) {
+    const result = await supabaseClient
+      .from(tableName)
+      .select("*")
+      .limit(500)
+
+    if (!result.error) {
+      data = result.data || []
+      usedTable = tableName
+      break
+    }
+
+    lastError = { tableName, error: result.error }
   }
 
-  const table = document.getElementById("table")
-
-  table.innerHTML = `
-    <tr>
-      <th>User ID</th>
-      <th>Username</th>
-      <th>Time</th>
-    </tr>
-  `
+  if (!usedTable) {
+    console.error("Supabase Error:", lastError)
+    addInfoRow(table, "Fehler beim Laden der Logs. Details in der Browser-Konsole.", true)
+    setStatus("Supabase-Fehler: " + (lastError?.error?.message || "Unbekannt"), true)
+    return
+  }
 
   if (!data || data.length === 0) {
-    table.innerHTML += `<tr><td colspan="3">Keine Logs gefunden</td></tr>`
+    addInfoRow(
+      table,
+      "Keine Logs gefunden. Falls Daten in Supabase vorhanden sind, pruefe RLS-SELECT-Policy und Schema/Tabellennamen."
+    )
+    setStatus("0 Logs geladen aus Tabelle: " + usedTable)
     return
   }
 
-  data.forEach(row => {
-    table.innerHTML += `
-      <tr>
-        <td>${row.user_id}</td>
-        <td>${row.username}</td>
-        <td>${row.created_at}</td>
-      </tr>
-    `
+  data.sort((a, b) => {
+    const aTime = Date.parse(String(getValue(a, ["created_at", "time", "logged_at", "inserted_at"])))
+    const bTime = Date.parse(String(getValue(b, ["created_at", "time", "logged_at", "inserted_at"])))
+    const aValid = Number.isFinite(aTime)
+    const bValid = Number.isFinite(bTime)
+    if (aValid && bValid) return bTime - aTime
+    if (aValid) return -1
+    if (bValid) return 1
+    return 0
   })
+
+  data.forEach(row => {
+    const tr = document.createElement("tr")
+
+    const userId = document.createElement("td")
+    userId.textContent = String(getValue(row, ["user_id", "userid", "id"]))
+    tr.appendChild(userId)
+
+    const username = document.createElement("td")
+    username.textContent = String(getValue(row, ["username", "player_name", "name"]))
+    tr.appendChild(username)
+
+    const createdAt = document.createElement("td")
+    createdAt.textContent = String(getValue(row, ["created_at", "time", "logged_at", "inserted_at"]))
+    tr.appendChild(createdAt)
+
+    table.appendChild(tr)
+  })
+
+  setStatus(data.length + " Logs geladen aus Tabelle: " + usedTable)
 }
 
 loadLogs()
