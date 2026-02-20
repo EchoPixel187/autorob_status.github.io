@@ -128,6 +128,7 @@ tr:hover {
 
     <table id="table">
       <tr>
+        <th>Nr.</th>
         <th>User ID</th>
         <th>Username</th>
         <th>Time</th>
@@ -203,6 +204,7 @@ function resetTable() {
   const table = document.getElementById("table")
   table.innerHTML = `
     <tr>
+      <th>Nr.</th>
       <th>User ID</th>
       <th>Username</th>
       <th>Time</th>
@@ -248,11 +250,13 @@ async function loadLogs() {
 
   if (requestId !== activeLoadRequest) return
 
-  for (const row of data) {
+  for (let i = 0; i < data.length; i++) {
     if (requestId !== activeLoadRequest) return
+    const row = data[i]
     const serverId = getValue(row, ["server-id","server_id","serverId"])
     const tr = document.createElement("tr")
     tr.innerHTML = `
+      <td>${i + 1}</td>
       <td>${getValue(row, ["user_id","id"])}</td>
       <td>${getValue(row, ["username","name"])}</td>
       <td>${getValue(row, ["created_at","time"])}</td>
