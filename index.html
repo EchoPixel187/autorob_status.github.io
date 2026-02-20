@@ -115,7 +115,7 @@ tr:hover {
   <!-- LOGIN -->
   <div id="loginView">
     <h2>Admin Login</h2>
-    <input type="text" id="username" placeholder="Username">
+    <input type="email" id="email" placeholder="E-Mail">
     <input type="password" id="password" placeholder="Passwort">
     <button onclick="login()">Anmelden</button>
     <p id="loginStatus"></p>
@@ -168,11 +168,13 @@ function showLogin() {
 }
 
 async function login() {
-  const username = document.getElementById("username").value
+  const email = document.getElementById("email").value.trim()
   const password = document.getElementById("password").value
 
-  // Fake Email erzeugen
-  const email = username + "@admin.local"
+  if (!email) {
+    document.getElementById("loginStatus").innerText = "Bitte E-Mail eingeben."
+    return
+  }
 
   const { error } = await supabaseClient.auth.signInWithPassword({
     email,
