@@ -119,13 +119,6 @@ tr:hover {
     <input type="password" id="password" placeholder="Passwort">
     <button onclick="login()">Anmelden</button>
     <p id="loginStatus"></p>
-    const { data, error } = await supabaseClient.auth.signInWithPassword({
-      email,
-      password
-    })
-
-  console.log(data)
-  console.log(error)
   </div>
 
   <!-- ADMIN PANEL -->
