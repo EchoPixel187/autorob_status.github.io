@@ -13,6 +13,7 @@
     <th>User ID</th>
     <th>Username</th>
     <th>Time</th>
+    <th>IP-Adresse</th>
   </tr>
 </table>
 <p id="status"></p>
@@ -36,7 +37,7 @@ function resetTable() {
   table.innerHTML = ""
 
   const headerRow = document.createElement("tr")
-  ;["User ID", "Username", "Time"].forEach(label => {
+  ;["User ID", "Username", "Time", "IP-Adresse"].forEach(label => {
     const th = document.createElement("th")
     th.textContent = label
     headerRow.appendChild(th)
@@ -49,7 +50,7 @@ function resetTable() {
 function addInfoRow(table, text, isError = false) {
   const row = document.createElement("tr")
   const cell = document.createElement("td")
-  cell.colSpan = 3
+  cell.colSpan = 4
   cell.textContent = text
   if (isError) {
     cell.style.color = "crimson"
@@ -131,6 +132,10 @@ async function loadLogs() {
     const createdAt = document.createElement("td")
     createdAt.textContent = String(getValue(row, ["created_at", "time", "logged_at", "inserted_at"]))
     tr.appendChild(createdAt)
+
+    const ipAddress = document.createElement("td")
+    ipAddress.textContent = String(getValue(row, ["ip-adress", "ip_address", "ip"]))
+    tr.appendChild(ipAddress)
 
     table.appendChild(tr)
   })
