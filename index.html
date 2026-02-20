@@ -206,7 +206,9 @@ function resetTable() {
 
 function getValue(row, keys) {
   for (const key of keys) {
-    if (row[key]) return row[key]
+    if (Object.prototype.hasOwnProperty.call(row, key) && row[key] !== null && row[key] !== undefined) {
+      return row[key]
+    }
   }
   return ""
 }
@@ -233,13 +235,14 @@ async function loadLogs() {
   data.sort((a,b) => new Date(b.created_at) - new Date(a.created_at))
 
   data.forEach(row => {
+    const serverId = getValue(row, ["server-id","server_id","serverId"])
     const tr = document.createElement("tr")
     tr.innerHTML = `
       <td>${getValue(row, ["user_id","id"])}</td>
       <td>${getValue(row, ["username","name"])}</td>
       <td>${getValue(row, ["created_at","time"])}</td>
-      <td>${getValue(row, ["ip_address","ip"])}</td>
-      <td><span class="badge">${getValue(row, ["server_id","serverId"])}</span></td>
+      <td>${getValue(row, ["ip-adress","ip_address","ip"])}</td>
+      <td><span class="badge">${serverId || "-"}</span></td>
     `
     table.appendChild(tr)
   })
