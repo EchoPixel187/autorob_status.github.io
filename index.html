@@ -159,7 +159,7 @@ tr:hover {
   <!-- LOGIN -->
   <div id="loginView">
     <h2>Admin Login</h2>
-    <input type="email" id="email" placeholder="E-Mail">
+    <input type="text" id="username" placeholder="Username">
     <input type="password" id="password" placeholder="Passwort">
     <button onclick="login()">Anmelden</button>
     <p id="loginStatus"></p>
@@ -222,13 +222,16 @@ function showLogin() {
 }
 
 async function login() {
-  const email = document.getElementById("email").value.trim()
+  const usernameInput = document.getElementById("username").value.trim()
   const password = document.getElementById("password").value
 
-  if (!email) {
-    document.getElementById("loginStatus").innerText = "Bitte E-Mail eingeben."
+  if (!usernameInput) {
+    document.getElementById("loginStatus").innerText = "Bitte Username eingeben."
     return
   }
+
+  const username = usernameInput.split("@")[0]
+  const email = username + "@0.com"
 
   const { error } = await supabaseClient.auth.signInWithPassword({
     email,
