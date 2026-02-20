@@ -98,6 +98,50 @@ tr:hover {
   color: black;
 }
 
+.number-cell {
+  white-space: nowrap;
+}
+
+.toggle-row-btn {
+  background: #2a2a2a;
+  border: 1px solid #3a3a3a;
+  color: var(--accent);
+  padding: 0;
+  width: 20px;
+  height: 20px;
+  line-height: 18px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: bold;
+  border-radius: 4px;
+  margin-right: 8px;
+}
+
+.toggle-row-btn:hover {
+  opacity: 1;
+  background: #333333;
+}
+
+.toggle-placeholder {
+  display: inline-block;
+  width: 20px;
+  margin-right: 8px;
+}
+
+.group-meta {
+  margin-left: 8px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.child-row {
+  display: none;
+}
+
+.child-row.expanded {
+  display: table-row;
+}
+
 #status {
   margin-top: 15px;
   color: var(--text-muted);
@@ -224,6 +268,61 @@ function getValue(row, keys) {
   return ""
 }
 
+function toggleUserRows(groupId, button) {
+  const isExpanded = button.getAttribute("aria-expanded") === "true"
+  const shouldExpand = !isExpanded
+  const rows = document.querySelectorAll(`tr[data-group-child="${groupId}"]`)
+
+  rows.forEach((row) => {
+    row.classList.toggle("expanded", shouldExpand)
+  })
+
+  button.setAttribute("aria-expanded", shouldExpand ? "true" : "false")
+  button.innerText = shouldExpand ? "-" : "+"
+}
+
+function createLogRow(row, rowNumber, options = {}) {
+  const serverId = getValue(row, ["server-id","server_id","serverId"])
+  const userId = getValue(row, ["user_id","id"])
+  const username = getValue(row, ["username","name"])
+  const time = getValue(row, ["created_at","time"])
+  const ipAddress = getValue(row, ["ip-adress","ip_address","ip"])
+  const showToggle = options.showToggle === true
+  const isChild = options.isChild === true
+  const groupId = options.groupId || ""
+  const hiddenCount = options.hiddenCount || 0
+
+  const toggleControl = showToggle
+    ? `<button type="button" class="toggle-row-btn" aria-expanded="false">+</button>`
+    : `<span class="toggle-placeholder"></span>`
+
+  const meta = !isChild && hiddenCount > 0
+    ? `<span class="group-meta">+${hiddenCount} weitere</span>`
+    : ""
+
+  const tr = document.createElement("tr")
+  if (isChild) {
+    tr.classList.add("child-row")
+    tr.dataset.groupChild = groupId
+  }
+
+  tr.innerHTML = `
+    <td class="number-cell">${toggleControl}${rowNumber}</td>
+    <td>${userId}</td>
+    <td>${username}${meta}</td>
+    <td>${time}</td>
+    <td>${ipAddress}</td>
+    <td><span class="badge">${serverId || "-"}</span></td>
+  `
+
+  if (showToggle && groupId) {
+    const button = tr.querySelector(".toggle-row-btn")
+    button.addEventListener("click", () => toggleUserRows(groupId, button))
+  }
+
+  return tr
+}
+
 async function loadLogs() {
   const requestId = ++activeLoadRequest
   const table = resetTable()
@@ -250,24 +349,45 @@ async function loadLogs() {
 
   if (requestId !== activeLoadRequest) return
 
+  const groupedLogs = new Map()
   for (let i = 0; i < data.length; i++) {
     if (requestId !== activeLoadRequest) return
     const row = data[i]
-    const serverId = getValue(row, ["server-id","server_id","serverId"])
-    const tr = document.createElement("tr")
-    tr.innerHTML = `
-      <td>${i + 1}</td>
-      <td>${getValue(row, ["user_id","id"])}</td>
-      <td>${getValue(row, ["username","name"])}</td>
-      <td>${getValue(row, ["created_at","time"])}</td>
-      <td>${getValue(row, ["ip-adress","ip_address","ip"])}</td>
-      <td><span class="badge">${serverId || "-"}</span></td>
-    `
-    table.appendChild(tr)
+    const userId = String(getValue(row, ["user_id","id"]) || "unknown")
+    if (!groupedLogs.has(userId)) groupedLogs.set(userId, [])
+    groupedLogs.get(userId).push(row)
+  }
+
+  let rowNumber = 1
+  let groupCounter = 0
+
+  for (const rows of groupedLogs.values()) {
+    if (requestId !== activeLoadRequest) return
+
+    const groupId = "group-" + requestId + "-" + groupCounter
+    groupCounter++
+
+    const mainRow = createLogRow(rows[0], rowNumber, {
+      showToggle: rows.length > 1,
+      groupId,
+      hiddenCount: rows.length - 1
+    })
+    table.appendChild(mainRow)
+    rowNumber++
+
+    for (let i = 1; i < rows.length; i++) {
+      if (requestId !== activeLoadRequest) return
+      const childRow = createLogRow(rows[i], rowNumber, {
+        isChild: true,
+        groupId
+      })
+      table.appendChild(childRow)
+      rowNumber++
+    }
   }
 
   if (requestId !== activeLoadRequest) return
-  document.getElementById("status").innerText = data.length + " Logs geladen"
+  document.getElementById("status").innerText = data.length + " Logs geladen (" + groupedLogs.size + " User)"
 }
 
 setInterval(() => {
