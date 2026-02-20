@@ -144,7 +144,7 @@ tr:hover {
 <script>
 const supabaseClient = supabase.createClient(
   "https://mpalntykgnflxqbswykw.supabase.co",
-  "YOUR_PUBLIC_ANON_KEY"
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1wYWxudHlrZ25mbHhxYnN3eWt3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0Mzk4OTcsImV4cCI6MjA4NzAxNTg5N30.qw5jyCIdKB9q9Tjp12Oxhwo1DBX_NCISugf_ahB-9lw"
 )
 
 supabaseClient.auth.getSession().then(({ data }) => {
