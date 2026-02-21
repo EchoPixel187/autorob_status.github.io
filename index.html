@@ -310,9 +310,9 @@ function createLogRow(row, rowNumber, options = {}) {
   }
 
   tr.innerHTML = `
-    <td class="number-cell">${toggleControl}${rowNumber}</td>
+    <td class="number-cell">${toggleControl}${rowNumber}${meta}</td>
     <td>${userId}</td>
-    <td>${username}${meta}</td>
+    <td>${username}</td>
     <td>${time}</td>
     <td>${ipAddress}</td>
     <td><span class="badge">${serverId || "-"}</span></td>
