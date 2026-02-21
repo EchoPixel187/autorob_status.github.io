@@ -212,7 +212,6 @@ function showAdmin() {
   loginView.classList.add("hidden")
   adminView.classList.remove("hidden")
 
-  // Verhindert doppeltes Initial-Laden, wenn Session-Events mehrfach feuern.
   if (wasHidden) loadLogs()
 }
 
