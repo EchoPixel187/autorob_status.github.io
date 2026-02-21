@@ -202,6 +202,7 @@ supabaseClient.auth.onAuthStateChange((event, session) => {
 })
 
 let activeLoadRequest = 0
+const expandedLogGroups = new Set()
 
 function showAdmin() {
   const adminView = document.getElementById("adminView")
@@ -217,6 +218,7 @@ function showAdmin() {
 
 function showLogin() {
   activeLoadRequest++
+  expandedLogGroups.clear()
   document.getElementById("adminView").classList.add("hidden")
   document.getElementById("loginView").classList.remove("hidden")
 }
@@ -280,6 +282,9 @@ function toggleUserRows(groupId, button) {
     row.classList.toggle("expanded", shouldExpand)
   })
 
+  if (shouldExpand) expandedLogGroups.add(groupId)
+  else expandedLogGroups.delete(groupId)
+
   button.setAttribute("aria-expanded", shouldExpand ? "true" : "false")
   button.innerText = shouldExpand ? "-" : "+"
 }
@@ -294,9 +299,10 @@ function createLogRow(row, rowNumber, options = {}) {
   const isChild = options.isChild === true
   const groupId = options.groupId || ""
   const hiddenCount = options.hiddenCount || 0
+  const isExpanded = options.isExpanded === true
 
   const toggleControl = showToggle
-    ? `<button type="button" class="toggle-row-btn" aria-expanded="false">+</button>`
+    ? `<button type="button" class="toggle-row-btn" aria-expanded="${isExpanded ? "true" : "false"}">${isExpanded ? "-" : "+"}</button>`
     : `<span class="toggle-placeholder"></span>`
 
   const meta = !isChild && hiddenCount > 0
@@ -306,6 +312,7 @@ function createLogRow(row, rowNumber, options = {}) {
   const tr = document.createElement("tr")
   if (isChild) {
     tr.classList.add("child-row")
+    if (isExpanded) tr.classList.add("expanded")
     tr.dataset.groupChild = groupId
   }
 
@@ -362,18 +369,20 @@ async function loadLogs() {
   }
 
   let rowNumber = 1
-  let groupCounter = 0
+  const activeGroupsInTable = new Set()
 
-  for (const rows of groupedLogs.values()) {
+  for (const [userId, rows] of groupedLogs.entries()) {
     if (requestId !== activeLoadRequest) return
 
-    const groupId = "group-" + requestId + "-" + groupCounter
-    groupCounter++
+    const groupId = "user-" + String(userId).replace(/[^a-zA-Z0-9_-]/g, "_")
+    activeGroupsInTable.add(groupId)
+    const isExpanded = expandedLogGroups.has(groupId)
 
     const mainRow = createLogRow(rows[0], rowNumber, {
       showToggle: rows.length > 1,
       groupId,
-      hiddenCount: rows.length - 1
+      hiddenCount: rows.length - 1,
+      isExpanded
     })
     table.appendChild(mainRow)
     rowNumber++
@@ -382,11 +391,16 @@ async function loadLogs() {
       if (requestId !== activeLoadRequest) return
       const childRow = createLogRow(rows[i], rowNumber, {
         isChild: true,
-        groupId
+        groupId,
+        isExpanded
       })
       table.appendChild(childRow)
       rowNumber++
     }
+  }
+
+  for (const groupId of [...expandedLogGroups]) {
+    if (!activeGroupsInTable.has(groupId)) expandedLogGroups.delete(groupId)
   }
 
   if (requestId !== activeLoadRequest) return
