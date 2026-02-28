@@ -340,7 +340,7 @@ async function loadLogs() {
   const { data, error } = await supabaseClient
     .from("EH_Admin_Stats")
     .select("*")
-    .limit(500)
+    .limit(10000)
 
   if (error) {
     if (requestId !== activeLoadRequest) return
