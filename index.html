@@ -293,7 +293,7 @@ function createLogRow(row, rowNumber, options = {}) {
   const userId = getValue(row, ["user_id","id"])
   const username = getValue(row, ["username","name"])
   const time = getValue(row, ["created_at","time"])
-  const ipAddress = getValue(row, ["ip-adress","ip_address","ip"])
+  const executor = getValue(row, ["Executor","executor","executor_name"])
   const showToggle = options.showToggle === true
   const isChild = options.isChild === true
   const groupId = options.groupId || ""
@@ -320,7 +320,7 @@ function createLogRow(row, rowNumber, options = {}) {
     <td>${userId}</td>
     <td>${username}</td>
     <td>${time}</td>
-    <td>${ipAddress}</td>
+    <td>${executor || "-"}</td>
     <td><span class="badge">${serverId || "-"}</span></td>
   `
 
