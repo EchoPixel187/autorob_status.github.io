@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <title>Admin Panel</title>
@@ -340,7 +340,7 @@ async function loadLogs() {
   const { data, error } = await supabaseClient
     .from("EH_Admin_Stats")
     .select("*")
-    .limit(10000)
+    .limit(500)
 
   if (error) {
     if (requestId !== activeLoadRequest) return
@@ -415,3 +415,4 @@ setInterval(() => {
 
 </body>
 </html>
+
